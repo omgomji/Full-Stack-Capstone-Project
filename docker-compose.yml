@@ -1,0 +1,32 @@
+version: '3.9'
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: rbac-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: rbac_capstone
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+  api:
+    build: ./backend
+    container_name: rbac-api
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      MONGO_URI: mongodb://mongo:27017/rbac_capstone
+      JWT_SECRET: super-secret-access
+      JWT_REFRESH_SECRET: super-secret-refresh
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongo
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+volumes:
+  mongo-data:
