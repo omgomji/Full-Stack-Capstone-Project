@@ -8,6 +8,7 @@ const api = axios.create({
 let currentAccessToken = null;
 let refreshHandler;
 let refreshPromise = null;
+let notifier;
 
 api.interceptors.request.use(function (config) {
   if (currentAccessToken) {
@@ -22,6 +23,9 @@ api.interceptors.response.use(
     if (!error || !error.config) return Promise.reject(error);
     var status = error.response && error.response.status;
     var url = error.config.url || '';
+    if (status === 403 && typeof notifier === 'function') {
+      notifier('error', 'Permission denied');
+    }
     if (url.indexOf('/auth/refresh') !== -1 || url.indexOf('/auth/login') !== -1) {
       return Promise.reject(error);
     }
@@ -57,6 +61,10 @@ export function setAccessToken(token) {
 
 export function registerRefresh(handler) {
   refreshHandler = handler;
+}
+
+export function registerNotifier(handler) {
+  notifier = handler;
 }
 
 export function getAccessToken() {

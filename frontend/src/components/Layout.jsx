@@ -1,13 +1,24 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
 import RoleGuard from './RoleGuard.jsx';
 
 function Layout() {
   const auth = useAuth();
   const location = useLocation();
+  const notifications = useNotification();
 
   function isActive(path) {
     return location.pathname === path;
+  }
+
+  async function handleLogout() {
+    try {
+      await auth.logout();
+      notifications.notify('Logged out successfully', 'info');
+    } catch (err) {
+      notifications.notify('Logout failed', 'error');
+    }
   }
 
   return (
@@ -18,7 +29,7 @@ function Layout() {
         </div>
         <div>
           <span style={{ marginRight: '1rem' }}>{auth.user ? auth.user.name + ' (' + auth.user.role + ')' : ''}</span>
-          <button onClick={auth.logout} style={{ background: '#ef4444', border: 'none', color: '#fff', padding: '0.4rem 0.9rem', borderRadius: '4px' }}>Logout</button>
+          <button onClick={handleLogout} style={{ background: '#ef4444', border: 'none', color: '#fff', padding: '0.4rem 0.9rem', borderRadius: '4px' }}>Logout</button>
         </div>
       </header>
       <div style={{ flex: 1, display: 'flex' }}>

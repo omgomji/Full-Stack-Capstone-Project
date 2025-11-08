@@ -12,7 +12,12 @@ function RoleGuard(props) {
     allowed = auth.can(props.permission, props.scope);
   }
   if (!allowed) {
-    return props.fallback || null;
+    return props.fallback || (
+      <div style={{ padding: '2rem', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 12px 30px rgba(15,23,42,0.1)' }}>
+        <h2 style={{ marginTop: 0, color: '#ef4444' }}>Permission Denied</h2>
+        <p style={{ color: '#4b5563' }}>Your role does not have access to this area.</p>
+      </div>
+    );
   }
   return props.children;
 }

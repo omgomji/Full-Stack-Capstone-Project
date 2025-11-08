@@ -9,6 +9,7 @@ import PostEditorPage from './pages/PostEditorPage.jsx';
 import PostDetailPage from './pages/PostDetailPage.jsx';
 import AuditPage from './pages/AuditPage.jsx';
 import UserAdminPage from './pages/UserAdminPage.jsx';
+import PermissionDeniedPage from './pages/PermissionDeniedPage.jsx';
 
 function App() {
   return (
@@ -24,7 +25,7 @@ function App() {
           <Route
             path="/audit"
             element={(
-              <RoleGuard roles={["admin"]}>
+              <RoleGuard roles={["admin"]} fallback={<PermissionDeniedPage message="Admin privileges are required to view audit logs." />}>
                 <AuditPage />
               </RoleGuard>
             )}
@@ -32,7 +33,7 @@ function App() {
           <Route
             path="/users"
             element={(
-              <RoleGuard roles={["admin"]}>
+              <RoleGuard roles={["admin"]} fallback={<PermissionDeniedPage message="Only admins can manage users." />}>
                 <UserAdminPage />
               </RoleGuard>
             )}

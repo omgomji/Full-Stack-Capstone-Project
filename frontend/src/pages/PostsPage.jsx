@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
 import PermissionGate from '../components/PermissionGate.jsx';
 
 function PostsPage() {
@@ -10,6 +11,7 @@ function PostsPage() {
   const [error, setError] = useState(null);
   const auth = useAuth();
   const navigate = useNavigate();
+  const notifications = useNotification();
 
   async function loadPosts() {
     setLoading(true);
@@ -19,6 +21,9 @@ function PostsPage() {
       setError(null);
     } catch (err) {
       setError('Failed to load posts');
+      if (err.response && err.response.status === 403) {
+        notifications.notify('Permission denied while loading posts', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -35,6 +40,9 @@ function PostsPage() {
       loadPosts();
     } catch (err) {
       setError('Delete failed: ' + (err.response && err.response.data ? err.response.data.message : 'unknown error'));
+      if (err.response && err.response.status === 403) {
+        notifications.notify('Permission denied: cannot delete this post', 'error');
+      }
     }
   }
 

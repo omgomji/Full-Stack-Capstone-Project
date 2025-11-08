@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
 
 function LoginPage() {
   const auth = useAuth();
+  const notifications = useNotification();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -13,9 +15,11 @@ function LoginPage() {
     setSubmitting(true);
     try {
       await auth.login(form);
+      notifications.notify('Login successful', 'success');
     } catch (err) {
       setError(err.response && err.response.data ? err.response.data.message : 'Unable to login');
       setSubmitting(false);
+      notifications.notify('Login failed', 'error');
     }
   }
 

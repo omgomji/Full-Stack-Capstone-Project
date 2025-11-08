@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
 
 function PostEditorPage(props) {
   const navigate = useNavigate();
   const params = useParams();
   const auth = useAuth();
+  const notifications = useNotification();
   const isEdit = props.mode === 'edit';
   const [form, setForm] = useState({ title: '', content: '', status: 'draft' });
   const [loading, setLoading] = useState(isEdit);
@@ -14,13 +16,13 @@ function PostEditorPage(props) {
   const [saving, setSaving] = useState(false);
   const [ownerId, setOwnerId] = useState(null);
 
-  const scope = useMemo(() => {
+  const scope = useMemo(function () {
     if (!isEdit) return 'own';
     if (!ownerId) return 'any';
     return ownerId === auth.user.id ? 'own' : 'any';
   }, [isEdit, ownerId, auth.user.id]);
 
-  useEffect(() => {
+  useEffect(function () {
     if (!isEdit) {
       if (!auth.can('posts:create', 'own')) {
         setError('You do not have permission to create posts.');
@@ -36,16 +38,32 @@ function PostEditorPage(props) {
           status: res.data.post.status
         });
         setOwnerId(res.data.post.authorId);
+        setError(null);
       } catch (err) {
         setError('Unable to load post.');
+        if (err.response && err.response.status === 403) {
+          notifications.notify('Permission denied while loading this post', 'error');
+        }
       } finally {
         setLoading(false);
       }
     }
     loadPost();
-  }, [isEdit, params.id, auth]);
+  }, [isEdit, params.id, auth, notifications]);
 
-  if (!auth.can(isEdit ? 'posts:update' : 'posts:create', scope)) {
+  const canPerform = auth.can(isEdit ? 'posts:update' : 'posts:create', scope);
+
+  useEffect(function () {
+    if (!canPerform) {
+      notifications.notify('Permission denied for this action', 'error');
+    }
+  }, [canPerform, notifications]);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
+  if (!canPerform) {
     return <p style={{ color: '#dc2626' }}>Access denied for this action.</p>;
   }
 
@@ -54,25 +72,27 @@ function PostEditorPage(props) {
     setSaving(true);
     setError(null);
     try {
-      if (isEdit) {
-        await api.put('/posts/' + params.id, form);
+      const response = isEdit
+        ? await api.put('/posts/' + params.id, form)
+        : await api.post('/posts', form);
+
+      const post = response.data ? response.data.post : null;
+      if (post && post.status === 'published') {
+        notifications.notify('Post published successfully', 'success');
       } else {
-        await api.post('/posts', form);
+        notifications.notify('Post saved successfully', 'success');
       }
       navigate('/posts');
     } catch (err) {
+      if (err.response && err.response.status === 403) {
+        notifications.notify('Permission denied: unable to save this post', 'error');
+      }
       setError(err.response && err.response.data ? err.response.data.message : 'Save failed');
     } finally {
       setSaving(false);
     }
-
-    return <p>Loading...</p>;
   }
 
-
-        if (!auth.can(isEdit ? 'posts:update' : 'posts:create', scope)) {
-          return <p style={{ color: '#dc2626' }}>Access denied for this action.</p>;
-        }
   return (
     <div>
       <h2 style={{ marginTop: 0 }}>{isEdit ? 'Edit Post' : 'Create Post'}</h2>
